@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0ea5e9">
+<title>AquaBite – บันทึกแคลอรี่อาหาร</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky-50:#f0f9ff; --sky-100:#e0f2fe; --sky-200:#bae6fd; --sky-300:#7dd3fc;
+  --sky-400:#38bdf8; --sky-500:#0ea5e9; --blue-600:#2563eb; --blue-700:#1d4ed8; --blue-900:#0c2a5e;
+  --bg:#eaf6ff; --card:#ffffff; --text:#0f2b4d; --muted:#6b86a6; --line:#dbeafe;
+  --danger:#ef4444; --warn:#f59e0b; --ok:#10b981;
+  --shadow:0 10px 30px -12px rgba(14,100,200,.28);
+  --shadow-sm:0 4px 14px -6px rgba(14,100,200,.22);
+  --radius:22px;
+  --ring-track:#e0f2fe;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#071a33; --card:#0e2748; --text:#e6f1ff; --muted:#8aa6c9; --line:#1b3a66;
+    --ring-track:#17355f; --sky-50:#0b2142; --sky-100:#12305a;
+    --shadow:0 10px 30px -12px rgba(0,0,0,.6); --shadow-sm:0 4px 14px -6px rgba(0,0,0,.5);
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{
+  font-family:'Prompt',system-ui,-apple-system,'Segoe UI',sans-serif;
+  background:var(--bg); color:var(--text); min-height:100vh;
+  background-image:
+    radial-gradient(900px 400px at 85% -10%, rgba(56,189,248,.25), transparent 60%),
+    radial-gradient(700px 400px at -10% 30%, rgba(37,99,235,.12), transparent 60%);
+  background-attachment:fixed;
+}
+button{font-family:inherit;cursor:pointer;border:0}
+input{font-family:inherit}
+.app{max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:130px;position:relative}
+
+/* ---------- header ---------- */
+.hero{
+  position:relative; color:#fff; padding:max(18px,env(safe-area-inset-top)) 20px 92px;
+  background:linear-gradient(135deg,#38bdf8 0%,#0ea5e9 45%,#2563eb 100%);
+  border-radius:0 0 34px 34px; overflow:hidden;
+}
+.hero::before,.hero::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.12)}
+.hero::before{width:220px;height:220px;right:-70px;top:-80px}
+.hero::after{width:140px;height:140px;left:-50px;bottom:-60px;background:rgba(255,255,255,.09)}
+.hero-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:19px;letter-spacing:.2px}
+.brand .logo{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.22);display:grid;place-items:center;backdrop-filter:blur(6px)}
+.icon-btn{width:40px;height:40px;border-radius:13px;background:rgba(255,255,255,.2);color:#fff;display:grid;place-items:center;backdrop-filter:blur(6px);transition:.2s}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn:hover{background:rgba(255,255,255,.3)}
+.datebar{display:flex;align-items:center;justify-content:space-between;margin-top:22px;position:relative;z-index:1}
+.datebar .d{text-align:center}
+.datebar .d b{display:block;font-size:20px;font-weight:600}
+.datebar .d span{font-size:13px;opacity:.85}
+.datebar .nav{width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.18);color:#fff;font-size:18px;display:grid;place-items:center}
+.datebar .nav:disabled{opacity:.35;cursor:default}
+
+/* ---------- summary ---------- */
+.summary{
+  margin:-70px 16px 0; background:var(--card); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:20px; position:relative; z-index:2;
+  display:flex; align-items:center; gap:18px;
+}
+.ring{position:relative;width:150px;height:150px;flex:none}
+.ring svg{transform:rotate(-90deg);width:100%;height:100%}
+.ring .track{stroke:var(--ring-track)}
+.ring .bar{stroke:url(#grad);transition:stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1)}
+.ring.over .bar{stroke:url(#gradOver)}
+.ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring .center b{font-size:32px;font-weight:700;line-height:1;color:var(--blue-600)}
+@media (prefers-color-scheme: dark){.ring .center b{color:var(--sky-300)}}
+.ring .center small{font-size:12px;color:var(--muted);margin-top:4px}
+.stats{flex:1;display:grid;gap:10px;min-width:0}
+.stat{background:var(--sky-50);border-radius:16px;padding:10px 14px}
+.stat span{display:block;font-size:12px;color:var(--muted)}
+.stat b{font-size:18px;font-weight:600}
+.stat b em{font-style:normal;font-size:12px;color:var(--muted);font-weight:400;margin-left:3px}
+.stat.left b{color:var(--ok)} .stat.left.over b{color:var(--danger)}
+
+/* ---------- list ---------- */
+.section-title{display:flex;align-items:baseline;justify-content:space-between;margin:26px 22px 10px}
+.section-title h2{margin:0;font-size:17px;font-weight:600}
+.section-title span{font-size:13px;color:var(--muted)}
+.list{padding:0 16px;display:grid;gap:12px}
+.item{
+  background:var(--card);border-radius:20px;box-shadow:var(--shadow-sm);padding:10px;
+  display:flex;gap:12px;align-items:center;animation:pop .35s cubic-bezier(.2,.9,.3,1.2) both;
+}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+.thumb{width:64px;height:64px;border-radius:16px;flex:none;background:linear-gradient(135deg,var(--sky-100),var(--sky-200));display:grid;place-items:center;font-size:28px;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.info{flex:1;min-width:0}
+.info .name{font-weight:500;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.info .meta{font-size:12.5px;color:var(--muted);margin-top:2px}
+.kcal{text-align:right;flex:none}
+.kcal b{font-size:19px;font-weight:700;color:var(--blue-600);display:block;line-height:1.1}
+@media (prefers-color-scheme: dark){.kcal b{color:var(--sky-300)}}
+.kcal small{font-size:11px;color:var(--muted)}
+.row-actions{display:flex;flex-direction:column;gap:6px;flex:none}
+.mini{width:30px;height:30px;border-radius:10px;background:var(--sky-50);color:var(--blue-600);display:grid;place-items:center;font-size:14px}
+.mini.del{color:var(--danger)}
+.mini:hover{background:var(--sky-100)}
+.empty{margin:0 16px;background:var(--card);border-radius:var(--radius);padding:34px 20px;text-align:center;box-shadow:var(--shadow-sm);border:2px dashed var(--sky-200)}
+.empty .big{font-size:52px;margin-bottom:6px;animation:float 3s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-8px)}}
+.empty p{margin:4px 0;color:var(--muted);font-size:14px}
+.empty b{font-size:16px}
+.linkbtn{background:none;color:var(--blue-600);font-weight:500;font-size:14px;padding:8px;margin-top:6px}
+@media (prefers-color-scheme: dark){.linkbtn{color:var(--sky-300)}}
+
+/* ---------- dock ---------- */
+.dock{
+  position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;pointer-events:none;
+  padding:0 16px max(18px,env(safe-area-inset-bottom));z-index:20;
+}
+.dock-inner{
+  pointer-events:auto;width:100%;max-width:448px;display:flex;align-items:center;gap:12px;
+  background:var(--card);border-radius:30px;padding:10px;box-shadow:0 18px 40px -12px rgba(14,100,200,.45);
+  border:1px solid var(--line);
+}
+.cam-btn{
+  flex:1;height:58px;border-radius:22px;color:#fff;font-size:16.5px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:linear-gradient(135deg,#38bdf8,#2563eb);box-shadow:0 10px 22px -8px rgba(37,99,235,.7);
+  transition:.2s;
+}
+.cam-btn:active{transform:scale(.97)}
+.add-btn{width:58px;height:58px;border-radius:22px;background:var(--sky-100);color:var(--blue-600);font-size:26px;display:grid;place-items:center}
+.add-btn:active{transform:scale(.94)}
+@media (prefers-color-scheme: dark){.add-btn{color:var(--sky-300)}}
+
+/* ---------- modal / sheet ---------- */
+.overlay{
+  position:fixed;inset:0;background:rgba(6,30,66,.55);backdrop-filter:blur(4px);
+  display:flex;align-items:flex-end;justify-content:center;z-index:50;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.overlay.show{opacity:1;pointer-events:auto}
+.sheet{
+  width:100%;max-width:480px;background:var(--card);border-radius:30px 30px 0 0;
+  padding:12px 20px max(24px,env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;
+  transform:translateY(100%);transition:transform .35s cubic-bezier(.2,.9,.3,1);
+}
+.overlay.show .sheet{transform:none}
+@media (min-width:520px){.overlay{align-items:center}.sheet{border-radius:30px;transform:translateY(30px) scale(.97);opacity:0;transition:.3s}.overlay.show .sheet{transform:none;opacity:1}}
+.grab{width:42px;height:5px;border-radius:5px;background:var(--line);margin:0 auto 14px}
+.sheet h3{margin:0 0 4px;font-size:19px;font-weight:600}
+.sheet .sub{margin:0 0 16px;font-size:13px;color:var(--muted)}
+.preview{width:100%;height:210px;border-radius:20px;overflow:hidden;position:relative;background:var(--sky-100);margin-bottom:16px}
+.preview img{width:100%;height:100%;object-fit:cover;display:block}
+.scan{position:absolute;left:0;right:0;height:60px;top:-60px;background:linear-gradient(180deg,transparent,rgba(56,189,248,.55),transparent);animation:scan 1.6s linear infinite}
+@keyframes scan{to{top:100%}}
+.status{display:flex;align-items:center;gap:12px;background:var(--sky-50);border-radius:16px;padding:14px;margin-bottom:6px;font-size:14px;color:var(--muted)}
+.spinner{width:22px;height:22px;border-radius:50%;border:3px solid var(--sky-200);border-top-color:var(--blue-600);animation:spin .8s linear infinite;flex:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err{background:#fef2f2;color:#b91c1c;border-radius:16px;padding:14px;font-size:14px;margin-bottom:10px;line-height:1.5}
+@media (prefers-color-scheme: dark){.err{background:#3b1217;color:#fca5a5}}
+.field{display:block;margin-bottom:14px}
+.field>span{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500}
+.field input{
+  width:100%;height:50px;border-radius:15px;border:2px solid var(--line);background:var(--sky-50);color:var(--text);
+  padding:0 14px;font-size:16px;outline:none;transition:.2s;
+}
+.field input:focus{border-color:var(--sky-400);background:var(--card);box-shadow:0 0 0 4px rgba(56,189,248,.18)}
+.field .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+.two{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{background:var(--sky-100);color:var(--blue-700);border-radius:999px;padding:6px 12px;font-size:13px}
+.chip b{font-weight:600}
+@media (prefers-color-scheme: dark){.chip{color:var(--sky-200)}}
+.note{font-size:12.5px;color:var(--muted);margin:-4px 0 14px;line-height:1.5}
+.btns{display:flex;gap:10px;margin-top:6px}
+.btn{flex:1;height:52px;border-radius:17px;font-size:16px;font-weight:600;transition:.2s}
+.btn:active{transform:scale(.97)}
+.btn.primary{color:#fff;background:linear-gradient(135deg,#38bdf8,#2563eb);box-shadow:0 10px 20px -8px rgba(37,99,235,.65)}
+.btn.primary:disabled{opacity:.5;box-shadow:none}
+.btn.ghost{background:var(--sky-100);color:var(--blue-700);flex:.6}
+@media (prefers-color-scheme: dark){.btn.ghost{color:var(--sky-200)}}
+.btn.danger{background:#fee2e2;color:#b91c1c}
+.hidden{display:none!important}
+.divider{height:1px;background:var(--line);margin:18px 0}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;left:50%;top:18px;transform:translate(-50%,-90px);background:var(--blue-900);color:#fff;
+  padding:12px 20px;border-radius:999px;font-size:14px;z-index:100;box-shadow:var(--shadow);
+  transition:transform .4s cubic-bezier(.2,.9,.3,1.2);max-width:90vw;text-align:center;
+}
+.toast.show{transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="hero">
+    <div class="hero-top">
+      <div class="brand">
+        <div class="logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18M5 11a7 7 0 0 1 14 0M4 15h16l-1.4 4.2a2 2 0 0 1-1.9 1.3H7.3a2 2 0 0 1-1.9-1.3L4 15z"/></svg>
+        </div>
+        AquaBite
+      </div>
+      <button class="icon-btn" id="btnSettings" aria-label="ตั้งค่า">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+    <div class="datebar">
+      <button class="nav" id="prevDay" aria-label="วันก่อนหน้า">‹</button>
+      <div class="d"><b id="dateTitle">วันนี้</b><span id="dateSub"></span></div>
+      <button class="nav" id="nextDay" aria-label="วันถัดไป">›</button>
+    </div>
+  </header>
+
+  <section class="summary">
+    <div class="ring" id="ring">
+      <svg viewBox="0 0 120 120">
+        <defs>
+          <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#2563eb"/></linearGradient>
+          <linearGradient id="gradOver" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fb923c"/><stop offset="1" stop-color="#ef4444"/></linearGradient>
+        </defs>
+        <circle class="track" cx="60" cy="60" r="52" fill="none" stroke-width="12"/>
+        <circle class="bar" id="ringBar" cx="60" cy="60" r="52" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
+      </svg>
+      <div class="center"><b id="totalKcal">0</b><small>kcal วันนี้</small></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>เป้าหมาย</span><b id="goalTxt">2,000<em>kcal</em></b></div>
+      <div class="stat left" id="leftBox"><span id="leftLabel">คงเหลือ</span><b id="leftTxt">2,000<em>kcal</em></b></div>
+      <div class="stat"><span>จำนวนมื้อ</span><b id="countTxt">0<em>รายการ</em></b></div>
+    </div>
+  </section>
+
+  <div class="section-title"><h2 id="listTitle">อาหารที่กินวันนี้</h2><span id="listHint"></span></div>
+  <div class="list" id="list"></div>
+  <div id="emptyBox" class="empty hidden">
+    <div class="big">🥗</div>
+    <b>ยังไม่มีบันทึกอาหาร</b>
+    <p>กดปุ่ม "ถ่ายรูปอาหาร" ด้านล่าง<br>เพื่อให้ AI ช่วยนับแคลอรี่ให้คุณ</p>
+  </div>
+</div>
+
+<!-- dock -->
+<div class="dock"><div class="dock-inner">
+  <button class="cam-btn" id="btnCam">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    ถ่ายรูปอาหาร
+  </button>
+  <button class="add-btn" id="btnAdd" aria-label="เพิ่มรายการเอง" title="เพิ่มรายการเอง">＋</button>
+</div></div>
+<input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden">
+
+<!-- Analyze sheet -->
+<div class="overlay" id="ovAnalyze"><div class="sheet">
+  <div class="grab"></div>
+  <h3>วิเคราะห์อาหารด้วย AI</h3>
+  <p class="sub" id="anaSub">กำลังให้ AI ดูรูปของคุณ…</p>
+  <div class="preview"><img id="anaImg" alt=""><div class="scan" id="anaScan"></div></div>
+  <div class="status" id="anaStatus"><div class="spinner"></div><div>กำลังระบุเมนูและประมาณแคลอรี่…</div></div>
+  <div class="err hidden" id="anaErr"></div>
+  <div id="anaResult" class="hidden">
+    <div class="chips" id="anaChips"></div>
+    <label class="field"><span>ชื่อเมนู</span><input id="anaName" maxlength="80"></label>
+    <label class="field"><span>แคลอรี่รวม (kcal)</span><input id="anaKcal" type="number" inputmode="numeric" min="0" max="20000"></label>
+    <div class="note" id="anaNote"></div>
+  </div>
+  <div class="btns">
+    <button class="btn ghost" id="anaCancel">ยกเลิก</button>
+    <button class="btn ghost hidden" id="anaRetry">ลองใหม่</button>
+    <button class="btn primary hidden" id="anaSave">บันทึก</button>
+  </div>
+</div></div>
+
+<!-- Entry sheet (add / edit) -->
+<div class="overlay" id="ovEntry"><div class="sheet">
+  <div class="grab"></div>
+  <h3 id="entTitle">เพิ่มรายการ</h3>
+  <p class="sub" id="entSub">กรอกชื่อเมนูและแคลอรี่ด้วยตัวเอง</p>
+  <label class="field"><span>ชื่อเมนู</span><input id="entName" maxlength="80" placeholder="เช่น ข้าวผัดกะเพราไก่ไข่ดาว"></label>
+  <div class="two">
+    <label class="field"><span>แคลอรี่ (kcal)</span><input id="entKcal" type="number" inputmode="numeric" min="0" max="20000" placeholder="0"></label>
+    <label class="field"><span>เวลา</span><input id="entTime" type="time"></label>
+  </div>
+  <div class="btns">
+    <button class="btn ghost" id="entCancel">ยกเลิก</button>
+    <button class="btn primary" id="entSave">บันทึก</button>
+  </div>
+</div></div>
+
+<!-- Settings sheet -->
+<div class="overlay" id="ovSettings"><div class="sheet">
+  <div class="grab"></div>
+  <h3>ตั้งค่า</h3>
+  <p class="sub">ข้อมูลทั้งหมดเก็บอยู่ในเครื่องของคุณ (localStorage)</p>
+  <label class="field"><span>OpenAI API Key</span>
+    <input id="setKey" type="password" placeholder="sk-..." autocomplete="new-password" spellcheck="false">
+    <div class="hint">ใช้โมเดล <b>gpt-4o-mini</b> วิเคราะห์รูป · คีย์จะถูกส่งไปที่ api.openai.com เท่านั้น · ควรตั้งวงเงินการใช้งาน (usage limit) ในบัญชี OpenAI</div>
+  </label>
+  <label class="field"><span>เป้าหมายแคลอรี่ต่อวัน (kcal)</span><input id="setGoal" type="number" inputmode="numeric" min="500" max="10000" placeholder="2000"></label>
+  <div class="btns">
+    <button class="btn ghost" id="setCancel">ปิด</button>
+    <button class="btn primary" id="setSave">บันทึก</button>
+  </div>
+  <div class="divider"></div>
+  <button class="btn danger" id="setClear" style="width:100%">ล้างบันทึกอาหารทั้งหมด</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= Storage ================= */
+const K_ENT = 'foodapp.entries', K_SET = 'foodapp.settings';
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
+};
+let entries  = store.get(K_ENT, []);
+let settings = Object.assign({ apiKey:'', goal:2000 }, store.get(K_SET, {}));
+
+/* ================= Helpers ================= */
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,'0');
+const dKey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const nowTime = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const todayKey = () => dKey(new Date());
+const parseKey = k => { const [y,m,d] = k.split('-').map(Number); return new Date(y, m-1, d); };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let viewDate = todayKey();
+
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2600);
+}
+function open(id){ $(id).classList.add('show'); }
+function close(id){ $(id).classList.remove('show'); }
+function saveEntries(){
+  if (store.set(K_ENT, entries)) return true;
+  // quota exceeded -> drop images from older entries and retry
+  entries.forEach(e => { delete e.image; });
+  if (store.set(K_ENT, entries)) { toast('พื้นที่เก็บข้อมูลเต็ม – ลบรูปเก่าออกให้แล้ว'); return true; }
+  toast('บันทึกไม่สำเร็จ: พื้นที่เก็บข้อมูลเต็ม'); return false;
+}
+
+/* ================= Render ================= */
+const CIRC = 2 * Math.PI * 52;
+let shownTotal = 0;
+
+function animateNumber(el, from, to){
+  const t0 = performance.now(), dur = 700;
+  (function step(t){
+    const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(from + (to - from) * e);
+    if (p < 1) requestAnimationFrame(step);
+  })(t0);
+}
+
+function thaiDate(key){
+  const d = parseKey(key);
+  const days = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return { day: days[d.getDay()], text: `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()+543}` };
+}
+
+function render(){
+  const isToday = viewDate === todayKey();
+  const td = thaiDate(viewDate);
+  $('dateTitle').textContent = isToday ? 'วันนี้' : `วัน${td.day}`;
+  $('dateSub').textContent = isToday ? `${td.day}ที่ ${td.text}` : td.text;
+  $('nextDay').disabled = isToday;
+  $('listTitle').textContent = isToday ? 'อาหารที่กินวันนี้' : `อาหารที่กิน (${td.text})`;
+
+  const day = entries.filter(e => e.date === viewDate).sort((a,b) => (b.time||'').localeCompare(a.time||''));
+  const total = day.reduce((s,e) => s + (Number(e.calories)||0), 0);
+  const goal = Number(settings.goal) || 2000;
+  const left = goal - total, over = left < 0;
+
+  animateNumber($('totalKcal'), shownTotal, total); shownTotal = total;
+  $('ring').classList.toggle('over', over);
+  $('ringBar').style.strokeDashoffset = CIRC * (1 - Math.min(1, total / goal));
+  $('goalTxt').innerHTML = `${fmt(goal)}<em>kcal</em>`;
+  $('leftLabel').textContent = over ? 'เกินเป้าหมาย' : 'คงเหลือ';
+  $('leftBox').classList.toggle('over', over);
+  $('leftTxt').innerHTML = `${fmt(Math.abs(left))}<em>kcal</em>`;
+  $('countTxt').innerHTML = `${day.length}<em>รายการ</em>`;
+  $('listHint').textContent = day.length ? `รวม ${fmt(total)} kcal` : '';
+
+  const list = $('list');
+  $('emptyBox').classList.toggle('hidden', day.length > 0);
+  list.innerHTML = day.map((e, i) => `
+    <div class="item" style="animation-delay:${i*45}ms" data-id="${e.id}">
+      <div class="thumb">${e.image ? `<img src="${e.image}" alt="">` : '🍽️'}</div>
+      <div class="info"><div class="name">${esc(e.name)}</div><div class="meta">${esc(e.time||'')} น.${e.source==='ai' ? ' · ✨ AI' : ''}</div></div>
+      <div class="kcal"><b>${fmt(e.calories)}</b><small>kcal</small></div>
+      <div class="row-actions">
+        <button class="mini" data-act="edit" aria-label="แก้ไข">✎</button>
+        <button class="mini del" data-act="del" aria-label="ลบ">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+/* ================= Date nav ================= */
+function shiftDay(n){
+  const d = parseKey(viewDate); d.setDate(d.getDate() + n);
+  if (dKey(d) > todayKey()) return;
+  viewDate = dKey(d); render();
+}
+$('prevDay').onclick = () => shiftDay(-1);
+$('nextDay').onclick = () => shiftDay(1);
+
+/* ================= List actions ================= */
+$('list').addEventListener('click', ev => {
+  const btn = ev.target.closest('[data-act]'); if (!btn) return;
+  const id = btn.closest('.item').dataset.id;
+  const e = entries.find(x => x.id === id); if (!e) return;
+  if (btn.dataset.act === 'del'){
+    if (confirm(`ลบ "${e.name}" ?`)){ entries = entries.filter(x => x.id !== id); saveEntries(); render(); toast('ลบรายการแล้ว'); }
+  } else openEntry(e);
+});
+
+/* ================= Manual add / edit ================= */
+let editing = null;
+function openEntry(e){
+  editing = e || null;
+  $('entTitle').textContent = e ? 'แก้ไขรายการ' : 'เพิ่มรายการ';
+  $('entSub').textContent = e ? 'ปรับชื่อเมนูหรือแคลอรี่ให้ถูกต้อง' : 'กรอกชื่อเมนูและแคลอรี่ด้วยตัวเอง';
+  $('entName').value = e ? e.name : '';
+  $('entKcal').value = e ? e.calories : '';
+  $('entTime').value = e ? e.time : nowTime();
+  open('ovEntry'); setTimeout(() => $('entName').focus(), 300);
+}
+$('btnAdd').onclick = () => openEntry(null);
+$('entCancel').onclick = () => close('ovEntry');
+$('entSave').onclick = () => {
+  const name = $('entName').value.trim(), kcal = Number($('entKcal').value);
+  if (!name) return toast('กรุณาใส่ชื่อเมนู');
+  if (!isFinite(kcal) || kcal < 0 || $('entKcal').value === '') return toast('กรุณาใส่แคลอรี่ให้ถูกต้อง');
+  const time = $('entTime').value || nowTime();
+  if (editing){ Object.assign(editing, { name, calories: Math.round(kcal), time }); }
+  else entries.push({ id: uid(), date: viewDate, time, name, calories: Math.round(kcal), source: 'manual' });
+  saveEntries(); close('ovEntry'); render(); toast(editing ? 'แก้ไขแล้ว' : 'เพิ่มรายการแล้ว');
+};
+
+/* ================= Settings ================= */
+function openSettings(){
+  $('setKey').value = settings.apiKey || '';
+  $('setGoal').value = settings.goal || 2000;
+  open('ovSettings');
+}
+$('btnSettings').onclick = openSettings;
+$('setCancel').onclick = () => close('ovSettings');
+$('setSave').onclick = () => {
+  const goal = Number($('setGoal').value);
+  if (!goal || goal < 500 || goal > 10000) return toast('เป้าหมายควรอยู่ระหว่าง 500–10,000 kcal');
+  settings.apiKey = $('setKey').value.replace(/[^\x21-\x7E]/g, ''); settings.goal = Math.round(goal);
+  store.set(K_SET, settings); close('ovSettings'); render(); toast('บันทึกการตั้งค่าแล้ว');
+};
+$('setClear').onclick = () => {
+  if (confirm('ลบบันทึกอาหารทั้งหมดในเครื่องนี้? การกระทำนี้ย้อนกลับไม่ได้')){
+    entries = []; saveEntries(); close('ovSettings'); render(); toast('ล้างข้อมูลแล้ว');
+  }
+};
+
+/* ================= Image handling ================= */
+function loadImage(file){
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); res(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('อ่านไฟล์รูปไม่ได้')); };
+    img.src = url;
+  });
+}
+function resize(img, maxDim, q){
+  const s = Math.min(1, maxDim / Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+  const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+  ctx.drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', q);
+}
+
+/* ================= AI analyze ================= */
+const SYSTEM = `คุณคือนักโภชนาการ ดูรูปอาหารแล้วระบุเมนูและประมาณแคลอรี่ตามปริมาณที่เห็นในภาพ
+ตอบเป็น JSON เท่านั้น รูปแบบ:
+{"is_food":boolean,"summary_name":"ชื่อเมนูรวมภาษาไทยสั้น ๆ","items":[{"name":"ชื่อรายการภาษาไทย","calories":number}],"total_calories":number,"note":"หมายเหตุสั้น ๆ เช่น ขนาดที่ประมาณ"}
+กฎ: calories เป็นจำนวนเต็ม kcal ต่อปริมาณทั้งหมดที่เห็นในภาพ, total_calories ต้องเท่ากับผลรวมของ items,
+ถ้ารูปไม่ใช่อาหารหรือเครื่องดื่ม ให้ is_food=false และ items=[] total_calories=0`;
+
+async function analyzeImage(dataUrl){
+  let resp;
+  try {
+    resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + settings.apiKey },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+        max_tokens: 500,
+        messages: [
+          { role: 'system', content: SYSTEM },
+          { role: 'user', content: [
+            { type: 'text', text: 'อาหารในรูปนี้คืออะไร และมีกี่แคลอรี่?' },
+            { type: 'image_url', image_url: { url: dataUrl, detail: 'low' } }
+          ] }
+        ]
+      })
+    });
+  } catch { throw new Error('เชื่อมต่ออินเทอร์เน็ตไม่ได้ กรุณาตรวจสอบเครือข่ายแล้วลองใหม่'); }
+
+  if (!resp.ok){
+    let detail = ''; try { detail = (await resp.json()).error?.message || ''; } catch {}
+    if (resp.status === 401) throw new Error(`OpenAI ปฏิเสธคีย์ (401) – คีย์ที่ใช้อยู่ขึ้นต้น ${settings.apiKey.slice(0,7)}… ลงท้าย …${settings.apiKey.slice(-4)} (ยาว ${settings.apiKey.length} ตัวอักษร)\nข้อความจาก OpenAI: ${detail || '(ไม่มี)'}`);
+    if (resp.status === 403) throw new Error('คีย์นี้ไม่มีสิทธิ์ใช้โมเดล gpt-4o-mini หรือ endpoint นี้ (403) ' + detail);
+    if (resp.status === 429) throw new Error('ใช้งานเกินโควตา/เรียกถี่เกินไป (429) ' + detail);
+    throw new Error(`OpenAI ตอบกลับผิดพลาด (${resp.status}) ${detail}`);
+  }
+  const data = await resp.json();
+  let out;
+  try { out = JSON.parse(data.choices[0].message.content); }
+  catch { throw new Error('อ่านผลลัพธ์จาก AI ไม่ได้ กรุณาลองใหม่'); }
+  return out;
+}
+
+let pending = null; // { full, thumb }
+function setAnaState(state, msg){
+  $('anaStatus').classList.toggle('hidden', state !== 'loading');
+  $('anaScan').classList.toggle('hidden', state !== 'loading');
+  $('anaErr').classList.toggle('hidden', state !== 'error');
+  $('anaResult').classList.toggle('hidden', state !== 'done');
+  $('anaSave').classList.toggle('hidden', state !== 'done');
+  $('anaRetry').classList.toggle('hidden', state !== 'error');
+  if (state === 'error'){ $('anaErr').textContent = msg; $('anaErr').style.whiteSpace = 'pre-line'; }
+  $('anaSub').textContent = state === 'loading' ? 'กำลังให้ AI ดูรูปของคุณ…' : state === 'done' ? 'ตรวจสอบและแก้ไขได้ก่อนบันทึก' : 'เกิดข้อผิดพลาด';
+}
+
+async function runAnalysis(){
+  if (!pending) return;
+  setAnaState('loading');
+  try {
+    const r = await analyzeImage(pending.full);
+    if (r.is_food === false) throw new Error('AI มองไม่เห็นอาหารในรูปนี้ ลองถ่ายใหม่ให้ชัดขึ้น หรือใช้ปุ่ม ＋ เพื่อกรอกเอง');
+    const items = (Array.isArray(r.items) ? r.items : [])
+      .map(i => ({ name: String(i.name || '').trim(), calories: Math.round(Number(i.calories)) }))
+      .filter(i => i.name && isFinite(i.calories) && i.calories >= 0);
+    let total = Math.round(Number(r.total_calories));
+    if (!isFinite(total) || total <= 0) total = items.reduce((s,i) => s + i.calories, 0);
+    if (!total && !items.length) throw new Error('AI ประเมินแคลอรี่ไม่ได้ กรุณาลองใหม่');
+    const name = String(r.summary_name || (items[0] && items[0].name) || '').trim() || 'อาหาร';
+    $('anaName').value = name; $('anaKcal').value = total;
+    $('anaChips').innerHTML = items.length > 1 ? items.map(i => `<span class="chip">${esc(i.name)} <b>${fmt(i.calories)}</b></span>`).join('') : '';
+    $('anaChips').classList.toggle('hidden', items.length <= 1);
+    $('anaNote').textContent = r.note ? '💡 ' + r.note : '';
+    $('anaNote').classList.toggle('hidden', !r.note);
+    setAnaState('done');
+  } catch (e) { setAnaState('error', e.message); }
+}
+
+$('btnCam').onclick = () => {
+  if (!settings.apiKey){ toast('กรุณาใส่ OpenAI API Key ก่อนใช้งาน'); openSettings(); return; }
+  $('fileInput').value = ''; $('fileInput').click();
+};
+$('fileInput').onchange = async ev => {
+  const file = ev.target.files && ev.target.files[0]; if (!file) return;
+  try {
+    const img = await loadImage(file);
+    pending = { full: resize(img, 800, 0.78), thumb: resize(img, 360, 0.7) };
+  } catch (e) { return toast(e.message); }
+  $('anaImg').src = pending.full;
+  open('ovAnalyze'); runAnalysis();
+};
+$('anaCancel').onclick = () => { close('ovAnalyze'); pending = null; };
+$('anaRetry').onclick = runAnalysis;
+$('anaSave').onclick = () => {
+  const name = $('anaName').value.trim(), kcal = Number($('anaKcal').value);
+  if (!name) return toast('กรุณาใส่ชื่อเมนู');
+  if (!isFinite(kcal) || kcal < 0 || $('anaKcal').value === '') return toast('กรุณาใส่แคลอรี่ให้ถูกต้อง');
+  entries.push({ id: uid(), date: viewDate, time: nowTime(), name, calories: Math.round(kcal), image: pending && pending.thumb, source: 'ai' });
+  saveEntries(); close('ovAnalyze'); pending = null; render(); toast('บันทึกอาหารแล้ว 🎉');
+};
+
+/* close sheets by tapping backdrop */
+['ovEntry','ovSettings'].forEach(id => $(id).addEventListener('click', e => { if (e.target.id === id) close(id); }));
+
+/* day rollover: if the app stays open past midnight */
+setInterval(() => { if (!document.hidden && viewDate > todayKey()) { viewDate = todayKey(); render(); } }, 60000);
+
+render();
+if (!settings.apiKey) setTimeout(() => toast('เริ่มต้น: แตะ ⚙ เพื่อใส่ OpenAI API Key'), 800);
+})();
+</script>
+</body>
+</html>
